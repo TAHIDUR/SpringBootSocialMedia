@@ -17,9 +17,17 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true, nullable = false)
     private String username;
+
+    @Column(nullable = true, length = 200)
+    private String image;
 
     public User(String username) {
         this.username = username;
+    }
+    public User(String username, String image) {
+        this.username = username;
+        this.image = image;
     }
 }
