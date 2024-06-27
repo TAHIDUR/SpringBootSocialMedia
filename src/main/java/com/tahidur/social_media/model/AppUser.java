@@ -15,7 +15,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class User implements UserDetails {
+public class AppUser implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,7 +23,7 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @Column(nullable = true, length = 200)
+    @Column(length = 200)
     private String image;
 
     @Enumerated(EnumType.STRING)
@@ -31,11 +31,11 @@ public class User implements UserDetails {
 
     private Timestamp lastLoggedIn;
 
-    public User(String username) {
+    public AppUser(String username) {
         this.username = username;
     }
 
-    public User(String username, String image) {
+    public AppUser(String username, String image) {
         this.username = username;
         this.image = image;
     }

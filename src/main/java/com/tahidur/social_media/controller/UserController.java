@@ -1,6 +1,6 @@
 package com.tahidur.social_media.controller;
 
-import com.tahidur.social_media.model.User;
+import com.tahidur.social_media.model.AppUser;
 import com.tahidur.social_media.repository.UserRepository;
 import com.tahidur.social_media.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,12 +26,12 @@ public class UserController {
     private UserRepository userRepository;
 
     @GetMapping("users")
-    public List<User> Users() {
+    public List<AppUser> Users() {
         return userRepository.findAll();
     }
 
     @GetMapping("user/{id}")
-    public Optional<User> UserDetails(Long id) {
+    public Optional<AppUser> UserDetails(Long id) {
         return userService.getUser(id);
     }
 
@@ -41,7 +41,7 @@ public class UserController {
         Path imagePath = Paths.get(UPLOAD_DIRECTORY, image.getOriginalFilename());
         imageName.append(image.getOriginalFilename());
         Files.write(imagePath, image.getBytes());
-        User user = new User(username, imageName.toString());
+        AppUser user = new AppUser(username, imageName.toString());
         return userService.createUser(user);
     }
 }
