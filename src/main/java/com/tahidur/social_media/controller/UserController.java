@@ -44,4 +44,14 @@ public class UserController {
         AppUser user = new AppUser(username, imageName.toString());
         return userService.createUser(user);
     }
+
+    @GetMapping("/admin/home")
+    public String AdminHome() {
+        return "Admin Panel";
+    }
+
+    @GetMapping("/user/home")
+    public String UserHome() {
+        return "User Panel";
+    }
 }

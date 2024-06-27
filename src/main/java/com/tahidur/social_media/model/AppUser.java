@@ -23,7 +23,16 @@ public class AppUser implements UserDetails {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @Column(length = 200)
+    @Column(unique = true)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Column(unique = true)
+    private String phone;
+
+    @Column(nullable = true, length = 200)
     private String image;
 
     @Enumerated(EnumType.STRING)
