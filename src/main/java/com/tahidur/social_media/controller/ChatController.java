@@ -9,10 +9,10 @@ import org.springframework.web.util.HtmlUtils;
 @Controller
 public class ChatController {
 
-//    @MessageMapping("hello")
-//    @SendTo("/topic/greetings")
-//    public ChatMessage greeting(ChatMessage message) {
-//        message.setContent("Hello " + HtmlUtils.htmlEscape(message.getUsername()) + "!");
-//        return message;
-//    }
+    @MessageMapping("hello")
+    @SendTo("/topic/greetings")
+    public ChatMessage greeting(ChatMessage message) {
+        message.setContent("Hello " + HtmlUtils.htmlEscape(message.getUsername()) + "!");
+        return message;
+    }
 }

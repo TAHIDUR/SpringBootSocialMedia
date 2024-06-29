@@ -32,7 +32,7 @@ public class AppUser implements UserDetails {
     @Column(unique = true)
     private String phone;
 
-    @Column(nullable = true, length = 200)
+    @Column(length = 200)
     private String image;
 
     @Enumerated(EnumType.STRING)
@@ -40,24 +40,11 @@ public class AppUser implements UserDetails {
 
     private Timestamp lastLoggedIn;
 
-    public AppUser(String username) {
-        this.username = username;
-    }
-
-    public AppUser(String username, String image) {
-        this.username = username;
-        this.image = image;
-    }
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.name()));
     }
 
-    @Override
-    public String getPassword() {
-        return null;
-    }
 
     @Override
     public boolean isAccountNonExpired() {
