@@ -1,12 +1,11 @@
 package com.tahidur.social_media.controller;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
-import com.tahidur.social_media.model.AppUser;
-import com.tahidur.social_media.model.LoginDto;
-import com.tahidur.social_media.model.RegisterDto;
-import com.tahidur.social_media.model.Role;
+import com.tahidur.social_media.model.*;
 import com.tahidur.social_media.repository.UserRepository;
 import com.tahidur.social_media.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,12 +13,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -94,6 +95,7 @@ public class UserController {
                 return ResponseEntity.badRequest().body("Email already taken");
             }
 
+            user.setIsOnline(true);
             userRepository.save(user);
 
             var jwtToken = createJwtToken(user);
@@ -140,17 +142,21 @@ public class UserController {
             Optional<AppUser> user = userRepository.findByUsername(loginDto.getUsername());
 
             if (user.isPresent()) {
-                String jwtToken = createJwtToken(user.get());
+                AppUser currentUser = user.get();
+                String jwtToken = createJwtToken(currentUser);
+
+                currentUser.setIsOnline(true);
+                userRepository.save(currentUser);
 
                 var response = new HashMap<String, Object>();
                 response.put("token", jwtToken);
-                response.put("user", user.get());
+                response.put("user", currentUser);
 
                 return ResponseEntity.ok(response);
             }
 
             return ResponseEntity.badRequest().body("Username or password is wrong");
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println("An error occurred");
             e.printStackTrace();
         }
@@ -166,12 +172,28 @@ public class UserController {
 
         Optional<AppUser> user = userRepository.findByUsername(auth.getName());
 
-        if(user.isPresent()){
-            response.put("User", user.get());
+        if (user.isPresent()) {
+            AppUser currentUser = user.get();
+            currentUser.setIsOnline(true);
+            userRepository.save(currentUser);
+            response.put("User", currentUser);
             return ResponseEntity.ok(response);
         }
-        
+
         return ResponseEntity.badRequest().body("User not found");
+    }
+
+    @PostMapping("change-status")
+    public ResponseEntity<Object> changeStatus(@RequestBody UserStatus userStatus, Authentication auth) {
+        Optional<AppUser> user = userRepository.findByUsername(auth.getName());
+        if (user.isEmpty()) {
+            return ResponseEntity.badRequest().body("User not found");
+        }
+        int status = userService.updateStatus(userStatus.getStatus(), user.get());
+        if(status == 200 ) {
+            return ResponseEntity.ok(userStatus);
+        }else
+            return ResponseEntity.badRequest().body("Something went wrong");
     }
 
     private String createJwtToken(AppUser user) {
@@ -204,5 +226,14 @@ public class UserController {
     @GetMapping("/user/home")
     public String UserHome() {
         return "User Panel";
+    }
+
+    @GetMapping("/logout")
+    public ResponseEntity<Object> logout(HttpServletRequest request, HttpServletResponse response) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            new SecurityContextLogoutHandler().logout(request, response, authentication);
+        }
+        return ResponseEntity.ok("Logged out");
     }
 }

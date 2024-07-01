@@ -51,4 +51,13 @@ public class UserService implements UserDetailsService {
                 .roles(String.valueOf(appUser.getRole()))
                 .build()).orElse(null);
     }
+
+    public int updateStatus(String status, AppUser user){
+        if(status.equals("offline")){
+            user.setIsOnline(false);
+            userRepository.save(user);
+            return 200;
+        }
+        return 400;
+    }
 }
