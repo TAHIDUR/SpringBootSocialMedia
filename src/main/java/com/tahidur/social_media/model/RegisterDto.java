@@ -16,6 +16,8 @@ public class RegisterDto {
 
     private String phone;
 
+    private String designation;
+
     @NotEmpty
     @Size(min = 6, message = "Minimum 6 character required")
     private String password;

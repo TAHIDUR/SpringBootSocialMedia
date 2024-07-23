@@ -5,4 +5,5 @@ import lombok.Data;
 @Data
 public class UserStatus {
     private String status;
+    private Boolean loggedOut = false;
 }

@@ -4,8 +4,6 @@ import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.tahidur.social_media.model.*;
 import com.tahidur.social_media.repository.UserRepository;
 import com.tahidur.social_media.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,17 +11,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +27,7 @@ import java.util.Optional;
 
 @RestController
 public class UserController {
+    private final HashMap<String, Object> response = new HashMap<>();
 
     @Autowired
     UserService userService;
@@ -51,6 +48,17 @@ public class UserController {
     @GetMapping("users")
     public List<AppUser> Users() {
         return userRepository.findAll();
+    }
+
+    @GetMapping("userStatuses")
+    public ResponseEntity<Object> AllUsers() {
+        try{
+            List<Users> users = userService.userStatuses();
+            response.put("users", users);
+        }catch (Exception e) {
+            response.put("Error", "Error occurred: "+e.getMessage());
+        }
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("user/{id}")
@@ -78,6 +86,7 @@ public class UserController {
 
         AppUser user = new AppUser();
         user.setUsername(registerDto.getUsername());
+        user.setDesignation(registerDto.getDesignation());
         user.setEmail(registerDto.getEmail());
         user.setPhone(registerDto.getPhone());
         user.setRole(Role.USER);
@@ -96,6 +105,7 @@ public class UserController {
             }
 
             user.setIsOnline(true);
+            user.setLastLoggedIn(Timestamp.from(Instant.now()));
             userRepository.save(user);
 
             var jwtToken = createJwtToken(user);
@@ -146,6 +156,7 @@ public class UserController {
                 String jwtToken = createJwtToken(currentUser);
 
                 currentUser.setIsOnline(true);
+                currentUser.setLastLoggedIn(Timestamp.from(Instant.now()));
                 userRepository.save(currentUser);
 
                 var response = new HashMap<String, Object>();
@@ -189,11 +200,31 @@ public class UserController {
         if (user.isEmpty()) {
             return ResponseEntity.badRequest().body("User not found");
         }
-        int status = userService.updateStatus(userStatus.getStatus(), user.get());
-        if(status == 200 ) {
-            return ResponseEntity.ok(userStatus);
-        }else
+        int status = userService.updateStatus(userStatus.getStatus(), user.get(), userStatus.getLoggedOut());
+        if (status == 200) {
+            try{
+                List<Users> users = userService.userStatuses();
+                response.put("users", users);
+            }catch (Exception e) {
+                response.put("Error", "Error occurred: "+e.getMessage());
+            }
+            return ResponseEntity.ok(response);
+        } else
             return ResponseEntity.badRequest().body("Something went wrong");
+    }
+
+    @PostMapping("update-profile")
+    public ResponseEntity<Object> updateProfile(@RequestBody AppUser user, Authentication auth) {
+        Optional<AppUser> userExist = userRepository.findByUsername(auth.getName());
+        if(userExist.isPresent()){
+            AppUser currentUser = userExist.get();
+            System.out.println(user);
+
+            response.put("success", "User Updated");
+            return ResponseEntity.ok(response);
+        }
+        response.put("Error", "Something went wrong");
+        return ResponseEntity.badRequest().body(response);
     }
 
     private String createJwtToken(AppUser user) {
@@ -226,14 +257,5 @@ public class UserController {
     @GetMapping("/user/home")
     public String UserHome() {
         return "User Panel";
-    }
-
-    @GetMapping("/logout")
-    public ResponseEntity<Object> logout(HttpServletRequest request, HttpServletResponse response) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null) {
-            new SecurityContextLogoutHandler().logout(request, response, authentication);
-        }
-        return ResponseEntity.ok("Logged out");
     }
 }

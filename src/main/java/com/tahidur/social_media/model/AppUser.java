@@ -35,11 +35,13 @@ public class AppUser implements UserDetails {
     @Column(length = 200)
     private String image;
 
+    @Column(length = 75)
+    private String designation;
+
     @Enumerated(EnumType.STRING)
     private Role role;
 
     private Boolean isOnline;
-
     private Timestamp lastLoggedIn;
 
     @Override
