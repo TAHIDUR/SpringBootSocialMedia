@@ -7,6 +7,7 @@ import com.tahidur.social_media.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,6 +20,12 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.HashMap;
@@ -28,6 +35,7 @@ import java.util.Optional;
 @RestController
 public class UserController {
     private final HashMap<String, Object> response = new HashMap<>();
+    public static String UPLOAD_DIRECTORY = System.getProperty("user.dir") + "/uploads";
 
     @Autowired
     UserService userService;
@@ -213,13 +221,27 @@ public class UserController {
             return ResponseEntity.badRequest().body("Something went wrong");
     }
 
-    @PostMapping("update-profile")
-    public ResponseEntity<Object> updateProfile(@RequestBody AppUser user, Authentication auth) {
+    @PostMapping(value = "update-profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Object> updateProfile(@RequestParam("username") String name,
+                                                @RequestParam("email") String email,
+                                                @RequestParam("designation") String designation,
+                                                @RequestParam("phone") String phone,
+                                                @RequestParam("image") MultipartFile image,
+                                                Authentication auth
+    ) throws IOException {
         Optional<AppUser> userExist = userRepository.findByUsername(auth.getName());
         if(userExist.isPresent()){
             AppUser currentUser = userExist.get();
-            System.out.println(user);
-
+            currentUser.setUsername(name);
+            currentUser.setEmail(email);
+            currentUser.setDesignation(designation);
+            currentUser.setPhone(phone);
+            StringBuilder imageName = new StringBuilder();
+            Path imagePath = Paths.get(UPLOAD_DIRECTORY, image.getOriginalFilename());
+            imageName.append(image.getOriginalFilename());
+            Files.write(imagePath, image.getBytes());
+            currentUser.setImage(imageName.toString());
+            userRepository.save(currentUser);
             response.put("success", "User Updated");
             return ResponseEntity.ok(response);
         }
