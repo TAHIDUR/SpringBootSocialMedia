@@ -15,7 +15,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -75,17 +74,19 @@ public class UserService implements UserDetailsService {
     }
 
     public List<Users> userStatuses() {
-        List<Users> users = new ArrayList<>();
-        try(Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/social-media", "root", "");
-            Statement statement = connection.createStatement()
-        ) {
-            ResultSet result = statement.executeQuery("SELECT username, is_online FROM users");
-            while (result.next()){
-                users.add(new Users(result.getString(1), result.getBoolean(2)));
-            }
-        }catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return users;
+//        List<Users> users = new ArrayList<>();
+
+        return userRepository.userStatues();
+//        try(Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/social-media", "root", "");
+//            Statement statement = connection.createStatement()
+//        ) {
+//            ResultSet result = statement.executeQuery("SELECT username, is_online FROM users");
+//            while (result.next()){
+//                users.add(new Users(result.getString(1), result.getBoolean(2)));
+//            }
+//        }catch (SQLException e) {
+//            System.out.println(e.getMessage());
+//        }
+//        return users;
     }
 }

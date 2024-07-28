@@ -22,6 +22,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,7 +39,7 @@ public class UserController {
     public static String UPLOAD_DIRECTORY = System.getProperty("user.dir") + "/uploads";
 
     @Autowired
-    UserService userService;
+    private UserService userService;
 
     @Autowired
     private UserRepository userRepository;
@@ -64,6 +65,7 @@ public class UserController {
             List<Users> users = userService.userStatuses();
             response.put("users", users);
         }catch (Exception e) {
+            e.printStackTrace();
             response.put("Error", "Error occurred: "+e.getMessage());
         }
         return ResponseEntity.ok(response);
@@ -247,6 +249,19 @@ public class UserController {
         }
         response.put("Error", "Something went wrong");
         return ResponseEntity.badRequest().body(response);
+    }
+
+    @GetMapping(value = "profile-image", produces = MediaType.IMAGE_JPEG_VALUE)
+    public byte[] profileImage(Authentication auth) throws IOException{
+
+        Optional<AppUser> user = userRepository.findByUsername(auth.getName());
+        if(user.isPresent()){
+            String imageFile = user.get().getImage();
+            Path imagePath = Paths.get(UPLOAD_DIRECTORY, imageFile);
+            return Files.readAllBytes(new File(String.valueOf(imagePath)).toPath());
+        }
+        Path imagePath = Paths.get(UPLOAD_DIRECTORY, "images.jpg");
+        return Files.readAllBytes(new File(String.valueOf(imagePath)).toPath());
     }
 
     private String createJwtToken(AppUser user) {
